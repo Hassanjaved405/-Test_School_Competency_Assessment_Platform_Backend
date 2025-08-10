@@ -67,8 +67,13 @@ app.use('/api/supervisor', supervisorRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+// Initialize database connection
+connectDatabase().catch((error) => {
+  console.error('Database connection failed:', error);
+});
+
 // Only start the server if not in Vercel environment
-if (process.env.VERCEL !== '1') {
+if (process.env.VERCEL !== '1' && require.main === module) {
   const startServer = async () => {
     try {
       await connectDatabase();
@@ -88,9 +93,6 @@ if (process.env.VERCEL !== '1') {
   };
 
   startServer();
-} else {
-  // Connect to database for Vercel
-  connectDatabase().catch(console.error);
 }
 
 export default app;
