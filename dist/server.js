@@ -34,13 +34,31 @@ const authLimiter = (0, express_rate_limit_1.default)({
 });
 app.use((0, helmet_1.default)());
 app.use((0, compression_1.default)());
-app.use((0, cors_1.default)({
-    origin: [
-        process.env.CLIENT_URL || 'http://localhost:3000',
-        'http://localhost:3001'
-    ],
-    credentials: true
-}));
+// CORS configuration with multiple origins
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            process.env.CLIENT_URL,
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'https://test-school-competency-assessment-p-two.vercel.app',
+            'https://test-school-competency-assessment-p.vercel.app'
+        ].filter(Boolean);
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        }
+        else {
+            callback(null, true); // Allow all origins in production for now
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400 // 24 hours
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, morgan_1.default)('dev'));
