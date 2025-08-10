@@ -57,8 +57,25 @@ const createTransporter = () => {
         }
       };
     } else {
-      // In production, throw error if not configured
-      throw new Error('Email configuration is required in production. Please set EMAIL_USER and EMAIL_PASS in environment variables.');
+      // In production, log warning but don't crash
+      console.warn('⚠️ Email service not configured in production.');
+      console.warn('📧 Email features will be disabled. Configure EMAIL_USER and EMAIL_PASS to enable.');
+      
+      // Return a mock transporter that logs warnings
+      return {
+        sendMail: async (mailOptions: any) => {
+          console.warn('⚠️ Email not sent (service not configured):', mailOptions.to);
+          return { 
+            messageId: 'mock-' + Date.now(),
+            accepted: [mailOptions.to],
+            rejected: [],
+            response: 'Email service not configured - email not sent'
+          };
+        },
+        verify: async () => {
+          return false;
+        }
+      };
     }
   }
   
@@ -93,8 +110,26 @@ const createTransporter = () => {
   return transporter;
 };
 
-// Create transporter instance
-const transporter = createTransporter();
+// Create transporter instance with error handling
+let transporter: any;
+try {
+  transporter = createTransporter();
+} catch (error) {
+  console.error('Failed to create email transporter:', error);
+  // Create a fallback transporter
+  transporter = {
+    sendMail: async (mailOptions: any) => {
+      console.warn('⚠️ Email not sent (service error):', mailOptions.to);
+      return { 
+        messageId: 'error-' + Date.now(),
+        accepted: [mailOptions.to],
+        rejected: [],
+        response: 'Email service error - email not sent'
+      };
+    },
+    verify: async () => false
+  };
+}
 
 export const sendEmail = async (to: string, subject: string, html: string): Promise<boolean> => {
   try {
