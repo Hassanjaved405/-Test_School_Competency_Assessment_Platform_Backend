@@ -67,24 +67,30 @@ app.use('/api/supervisor', supervisorRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-const startServer = async () => {
-  try {
-    await connectDatabase();
-    
-    if (process.env.NODE_ENV === 'development') {
-      await seedDatabase();
+// Only start the server if not in Vercel environment
+if (process.env.VERCEL !== '1') {
+  const startServer = async () => {
+    try {
+      await connectDatabase();
+      
+      if (process.env.NODE_ENV === 'development') {
+        await seedDatabase();
+      }
+      
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
     }
-    
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+  };
 
-startServer();
+  startServer();
+} else {
+  // Connect to database for Vercel
+  connectDatabase().catch(console.error);
+}
 
 export default app;
